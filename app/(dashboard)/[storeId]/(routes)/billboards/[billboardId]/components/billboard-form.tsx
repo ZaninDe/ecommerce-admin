@@ -22,8 +22,6 @@ import { toast } from 'react-hot-toast'
 import axios from 'axios'
 import { useParams, useRouter } from 'next/navigation'
 import { AlertModal } from '@/components/modals/alert-modal'
-import { ApiAlert } from '@/components/ui/api-alert'
-import { useOrigin } from '@/hooks/use-origin'
 import { ImageUpload } from '@/components/ui/image-upload'
 
 interface BillboardFormProps {
@@ -40,7 +38,6 @@ type BillboardFormValues = z.infer<typeof formSchema>
 export const BillboardForm = ({ initialData }: BillboardFormProps) => {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const origin = useOrigin()
 
   const params = useParams()
   const router = useRouter()
@@ -61,9 +58,17 @@ export const BillboardForm = ({ initialData }: BillboardFormProps) => {
   const onSubmit = async (data: BillboardFormValues) => {
     try {
       setLoading(true)
-      await axios.patch(`/api/stores/${params.storeId}`, data)
+      if (initialData) {
+        await axios.patch(
+          `/api/${params.storeId}/billboards/${params.billboardId}`,
+          data,
+        )
+      } else {
+        await axios.post(`/api/${params.storeId}/billboards/`, data)
+      }
       router.refresh()
-      toast.success('Store updated.')
+      router.push(`/${params.storeId}/billboards`)
+      toast.success(toastMessage)
     } catch (error) {
       toast.error('Something went wrong.')
     } finally {
@@ -75,12 +80,14 @@ export const BillboardForm = ({ initialData }: BillboardFormProps) => {
     try {
       setLoading(true)
 
-      await axios.delete(`/api/stores/${params.storeId}`)
+      await axios.delete(
+        `/api/${params.storeId}/billboards/${params.billboardId}`,
+      )
       router.refresh()
       router.push('/')
-      toast.success('Store deleted.')
+      toast.success('Billboard deleted.')
     } catch (error) {
-      toast.error('Make sure you removed all products and categories first.')
+      toast.error('Make sure you removed all using this bilboard first')
     } finally {
       setLoading(false)
       setOpen(false)
